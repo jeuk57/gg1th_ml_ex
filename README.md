@@ -1,55 +1,36 @@
-# scikit-learn을 활용한 머신러닝 학습
+# 대형 전기 화물차 충전 계획 추천 시스템
 
-# 가상환경 만들기
-```
-uv init --bare 
-```
+부산신항에서 인천국제공항 화물터미널까지의 고정 경로를 구간별로 분석하고 충전 계획을 추천하는 Streamlit 앱입니다.
 
-# 라이브러리 설치
-```
-uv add scikit-learn pandas numpy joblib matplotlib searborn
-```
+## 실행
 
-# jupyter notebook에 가상환경 추가하기
-- ipykernel 설치
-```
-uv add ipykernel
-```
-- 가상환경 추가
-```
-uv run python -m ipykernel install --user --name .venv --display-name "ml_env"
+```bash
+cd /home/aiuk/ml_ex
+uv run streamlit run app.py
 ```
 
-# 시각화 한글 깨짐 문제해결 for WSL2 ubuntu
-```
-# 한글 폰트 설정
-import platform
+## 실행에 필요한 파일
 
-from matplotlib import rc
-plt.rcParams['axes.unicode_minus'] = False
+- `models/truck_energy_model.pkl`
+- `models/truck_energy_metadata.pkl`
+- `data/processed/fixed_tmap_route.json`
+- `data/processed/fixed_locations.json`
+- `project_data/전국휴게소정보표준데이터.csv`
 
-if platform.system() == 'Linux':
-    rc('font', family = 'NanumGothic')  # 또는 '나눔고딕'
-    print('Linux system... font set to NanumGothic')
-elif platform.system() == 'Windows':
-    rc('font', family = 'Malgun Gothic')   # 또는 '맑은 고딕'
-    print('Windows system... font set to Malgun Gothic')
-else:
-    print('Unknown system... sorry~~~~')
-```
+`data/processed/fixed_segments.csv`는 실행 속도를 위한 캐시이며, 없으면 고정 경로에서 다시 생성됩니다.
 
-# git 연결하기
-- github 리모트 `gg1th_ml_ex` 레포지토리 만들기
-- git연결하기
-```
-git init
-git remote add origin "자신의 ssh url"
-git branch -M main
-git pull origin main
-```
-- git에 업로딩
-```
-git add README.md
-git commit -m "README.md 파일 업로딩"
-git push -u origin main
-```
+## 앱 동작
+
+- 저장된 TMAP 경로를 약 10km 구간으로 나눕니다.
+- 9 Feature XGBoost 모델로 구간별 에너지 소비량을 예측합니다.
+- 구간별 SOC를 계산하고 충전 휴게소를 추천합니다.
+- 날씨 기본 모드는 수동 입력입니다.
+- Open-Meteo 예보 모드를 선택하고 계산 버튼을 누른 경우에만 날씨 API를 호출합니다.
+
+## 주요 코드
+
+- `app.py`: Streamlit 화면과 전체 실행 흐름
+- `src/route_utils.py`: 고정 경로와 구간 처리
+- `src/model_utils.py`: 모델 로딩과 예측
+- `src/data_loader.py`: 휴게소 데이터 로딩
+- `src/charging.py`: SOC와 충전 계획 계산
